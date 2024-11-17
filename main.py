@@ -19,7 +19,7 @@ def draw_coordinate_lines_for_horizontal_capture(frame):
     cv2.line(frame, (0, center_y + 95), (width, center_y + 105), (0, 255, 0), 2)
     cv2.line(frame, (center_x, 0), (center_x, height), (255, 0, 0), 2)
 
-def hand_landmark_callback(result, image, timestamp_ms, frame, width, height):
+def hand_landmark_callback(result, __, ___):
     global previous_landmarks
     if result.hand_landmarks:
         for i, hand_landmarks in enumerate(result.hand_landmarks):
@@ -51,7 +51,7 @@ def show_camera_feed(capture: cv2.VideoCapture, capture_type: str):
     options = HandLandmarkerOptions(
         base_options=BaseOptions(model_asset_path=model_path),
         running_mode=VisionRunningMode.LIVE_STREAM,
-        result_callback=lambda result, image, timestamp_ms: hand_landmark_callback(result, image, timestamp_ms, frame, width, height)
+        result_callback=hand_landmark_callback
     )
 
     with HandLandmarker.create_from_options(options) as hand_landmarker:
