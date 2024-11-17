@@ -41,10 +41,10 @@ def show_camera_feed(capture: cv2.VideoCapture, capture_type: str):
                 print("Failed to grab frame")
                 break
 
-            # if capture_type == "vertical":
-            #     draw_coordinate_lines_for_vertical_capture(frame)
-            # elif capture_type == "horizontal":
-            #     draw_coordinate_lines_for_horizontal_capture(frame)
+            if capture_type == "vertical":
+                draw_coordinate_lines_for_vertical_capture(frame)
+            elif capture_type == "horizontal":
+                draw_coordinate_lines_for_horizontal_capture(frame)
 
             frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)
