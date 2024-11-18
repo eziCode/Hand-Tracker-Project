@@ -4,15 +4,29 @@ from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 import time
 import math
+import matplotlib.pyplot as plt
 
 previous_landmarks = None
+y_values_to_z_values = []
+
+def plot_y_vs_z():
+    global y_values_to_z_values
+    y_vals = [val[0] for val in y_values_to_z_values]
+    z_vals = [val[1] for val in y_values_to_z_values]
+
+    plt.figure(figsize=(10, 6))
+    plt.scatter(y_vals, z_vals, color='blue')
+    plt.title('Correlation between Y and Z Values')
+    plt.xlabel('Y Value')
+    plt.ylabel('Z Value')
+    plt.grid(True)
+    plt.show()
 
 def draw_coordinate_lines_for_vertical_capture(frame):
     height, width = frame.shape[:2]
     center_x, center_y = width // 2, height // 2
     cv2.line(frame, (0, center_y), (width, center_y), (0, 255, 0), 2)
     cv2.line(frame, (center_x, 0), (center_x, height), (255, 0, 0), 2)
-
 
 def draw_coordinate_lines_for_horizontal_capture(frame):
     height, width = frame.shape[:2]
@@ -39,9 +53,11 @@ def draw_landmarks_for_vertical_capture(landmarks, handedness, handedness_score,
     draw_landmarks(landmarks, handedness, handedness_score, frame, width, height)
 
 def draw_landmarks_for_horizontal_capture(landmarks, handedness, handedness_score, frame):
+    global y_values_to_z_values
     height, width = frame.shape[:2]
     average_y_value_of_hand = sum(landmark.y for landmark in landmarks if landmark != landmarks[8]) / (len(landmarks) - 1)
     average_z_value_of_hand = abs(sum(landmark.z for landmark in landmarks if landmark != landmarks[8]) / (len(landmarks) - 1))
+    y_values_to_z_values.append((average_y_value_of_hand, average_z_value_of_hand))
     average_y_pixel = int(average_y_value_of_hand * height)
     cv2.line(frame, (0, average_y_pixel), (width, average_y_pixel), (0, 255, 0), 2)
     draw_landmarks(landmarks, handedness, handedness_score, frame, width, height)
@@ -89,6 +105,9 @@ def show_camera_feed(capture: cv2.VideoCapture, capture_type: str):
             cv2.imshow('Camera Feed', frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
+
+    plot_y_vs_z()
+
     capture.release()
     cv2.destroyAllWindows()
 
