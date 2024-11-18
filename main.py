@@ -3,6 +3,7 @@ import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 import time
+import math
 
 previous_landmarks = None
 
@@ -33,10 +34,25 @@ def hand_landmark_callback(result, __, ___):
     else:
         previous_landmarks = None
 
+def draw_landmarks_for_vertical_capture(landmarks, handedness, handedness_score, frame):
+    height, width = frame.shape[:2]
+    draw_landmarks(landmarks, handedness, handedness_score, frame, width, height)
+
+def draw_landmarks_for_horizontal_capture(landmarks, handedness, handedness_score, frame):
+    height, width = frame.shape[:2]
+    average_y_value_of_hand = sum(landmark.y for landmark in landmarks if landmark != landmarks[8]) / (len(landmarks) - 1)
+    average_z_value_of_hand = abs(sum(landmark.z for landmark in landmarks if landmark != landmarks[8]) / (len(landmarks) - 1))
+    average_y_pixel = int(average_y_value_of_hand * height)
+    cv2.line(frame, (0, average_y_pixel), (width, average_y_pixel), (0, 255, 0), 2)
+    draw_landmarks(landmarks, handedness, handedness_score, frame, width, height)
+
 def draw_landmarks(landmarks, handedness, handedness_score, frame, width, height):
+    height, width = frame.shape[:2]
     for i, landmark in enumerate(landmarks):
         x = int(landmark.x * width)
         y = int(landmark.y * height)
+        if i == 8:
+            print(f"Landmark {i}: x={landmark.x}, y={landmark.y}, z={landmark.z}")
         cv2.circle(frame, (x, y), 5, (0, 255, 255), -1)
         cv2.putText(frame, f"{i}", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 255), 1)
     cv2.putText(frame, f"{handedness} ({handedness_score:.2f})", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
@@ -61,17 +77,10 @@ def show_camera_feed(capture: cv2.VideoCapture, capture_type: str):
                 print("Failed to grab frame")
                 break
 
-            height, width = frame.shape[:2]
-
-            if previous_landmarks:
-                draw_landmarks(previous_landmarks[0], previous_landmarks[1], previous_landmarks[2], frame, width, height)
-
-            
-
-            if capture_type == "vertical":
-                draw_coordinate_lines_for_vertical_capture(frame)
-            elif capture_type == "horizontal":
-                draw_coordinate_lines_for_horizontal_capture(frame)
+            if previous_landmarks and capture_type == "horizontal":
+                draw_landmarks_for_horizontal_capture(previous_landmarks[0], previous_landmarks[1], previous_landmarks[2], frame)
+            elif previous_landmarks and capture_type == "vertical":
+                draw_landmarks_for_vertical_capture(previous_landmarks[0], previous_landmarks[1], previous_landmarks[2], frame)
 
             frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)
@@ -95,4 +104,8 @@ horizontal_capture = cv2.VideoCapture(0)
 #     error_message("Failed to open camera")
 
 show_camera_feed(horizontal_capture, "horizontal")
+
+# point 8 is the tip of the index finger
+# take average y coordinate of points in hand and then compare to y coordinate of point 8
+
 # show_camera_feed(vertical_capture, "vertical")
