@@ -79,6 +79,9 @@ def hand_landmark_callback(result, __, ___):
 
 def draw_landmarks_for_vertical_capture(landmarks, handedness, handedness_score, frame):
     height, width = frame.shape[:2]
+    x, y = landmarks[8].x, landmarks[8].y
+    frame_relative_position = (x * width, y * height)
+    print(frame_relative_position)
     draw_landmarks(landmarks, handedness, handedness_score, frame, width, height)
 
 def draw_landmarks_for_horizontal_capture(landmarks, handedness, handedness_score, frame):
@@ -91,7 +94,7 @@ def draw_landmarks_for_horizontal_capture(landmarks, handedness, handedness_scor
     cv2.line(frame, (0, average_y_pixel), (width, average_y_pixel), (0, 255, 0), 2)
     draw_landmarks(landmarks, handedness, handedness_score, frame, width, height, average_y_pixel)
 
-def draw_landmarks(landmarks, handedness, handedness_score, frame, width, height, average_y_pixel=None):
+def draw_landmarks(landmarks, handedness, handedness_score, frame, width, height, average_y_pixel=float('inf')):
     height, width = frame.shape[:2]
     for i, landmark in enumerate(landmarks):
         x = int(landmark.x * width)
@@ -123,6 +126,9 @@ def show_camera_feed(capture: cv2.VideoCapture, capture_type: str):
                 print("Failed to grab frame")
                 break
 
+            if capture_type == "vertical":
+                frame = cv2.rotate(frame, cv2.ROTATE_180)
+
             if previous_landmarks and capture_type == "horizontal":
                 draw_landmarks_for_horizontal_capture(previous_landmarks[0], previous_landmarks[1], previous_landmarks[2], frame)
             elif previous_landmarks and capture_type == "vertical":
@@ -145,14 +151,15 @@ def error_message(message: str):
     print(f"Error: {message}")
     exit()
 
-# vertical_capture = cv2.VideoCapture(1)
-horizontal_capture = cv2.VideoCapture(0)
+vertical_capture = cv2.VideoCapture(0)
+# horizontal_capture = cv2.VideoCapture(0)
 
 
 # if not vertical_capture.isOpened() or not horizontal_capture.isOpened():
 #     error_message("Failed to open camera")
 
-show_camera_feed(horizontal_capture, "horizontal")
+# show_camera_feed(horizontal_capture, "horizontal")
+show_camera_feed(vertical_capture, "vertical")
 
 # point 8 is the tip of the index finger
 # take average y coordinate of points in hand and then compare to y coordinate of point 8
